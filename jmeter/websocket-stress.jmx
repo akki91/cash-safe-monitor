@@ -32,31 +32,17 @@
       </elementProp>
     </TestPlan>
     <hashTree>
-
-      <!-- ================================================================ -->
-      <!-- Thread Group: WebSocket Connections                              -->
-      <!-- 200 threads, 10s ramp-up, 1 loop (each thread holds connection) -->
-      <!-- ================================================================ -->
-      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="WebSocket Stress - 200 Concurrent Connections" enabled="true">
-        <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
-        <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop Controller" enabled="true">
-          <boolProp name="LoopController.continue_forever">false</boolProp>
-          <stringProp name="LoopController.loops">1</stringProp>
-        </elementProp>
-        <stringProp name="ThreadGroup.num_threads">200</stringProp>
-        <stringProp name="ThreadGroup.ramp_time">10</stringProp>
-        <boolProp name="ThreadGroup.scheduler">false</boolProp>
-        <stringProp name="ThreadGroup.duration"></stringProp>
-        <stringProp name="ThreadGroup.delay"></stringProp>
+      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="WebSocket Stress - 200 Concurrent Connections">
+        <intProp name="ThreadGroup.num_threads">200</intProp>
+        <intProp name="ThreadGroup.ramp_time">10</intProp>
         <boolProp name="ThreadGroup.same_user_on_next_iteration">true</boolProp>
+        <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
+        <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop Controller">
+          <stringProp name="LoopController.loops">1</stringProp>
+          <boolProp name="LoopController.continue_forever">false</boolProp>
+        </elementProp>
       </ThreadGroup>
       <hashTree>
-
-        <!-- ============================================================== -->
-        <!-- Step 1: Open WebSocket Connection                              -->
-        <!-- Uses JMeter WebSocket Samplers plugin                          -->
-        <!-- Plugin: eu.luminis.jmeter.wssampler.OpenWebSocketSampler       -->
-        <!-- ============================================================== -->
         <eu.luminis.jmeter.wssampler.OpenWebSocketSampler guiclass="eu.luminis.jmeter.wssampler.OpenWebSocketSamplerGui" testclass="eu.luminis.jmeter.wssampler.OpenWebSocketSampler" testname="WebSocket Open Connection" enabled="true">
           <stringProp name="serverAddress">${WS_HOST}</stringProp>
           <stringProp name="serverPort">${WS_PORT}</stringProp>
@@ -64,11 +50,13 @@
           <stringProp name="connectTimeout">5000</stringProp>
           <stringProp name="readTimeout">6000</stringProp>
           <boolProp name="TLS">false</boolProp>
+          <stringProp name="server"></stringProp>
+          <stringProp name="port">80</stringProp>
         </eu.luminis.jmeter.wssampler.OpenWebSocketSampler>
         <hashTree>
           <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Assert WS Connection Opened" enabled="true">
             <collectionProp name="Asserion.test_strings">
-              <stringProp name="49586">101</stringProp>
+              <stringProp name="48626">101</stringProp>
             </collectionProp>
             <stringProp name="Assertion.custom_message">WebSocket connection should return 101 Switching Protocols</stringProp>
             <stringProp name="Assertion.test_field">Assertion.response_code</stringProp>
@@ -77,35 +65,25 @@
           </ResponseAssertion>
           <hashTree/>
         </hashTree>
-
-        <!-- ============================================================== -->
-        <!-- Step 2: Listen for messages for the configured duration        -->
-        <!-- Each thread holds its connection open and reads frames.         -->
-        <!-- ============================================================== -->
         <eu.luminis.jmeter.wssampler.SingleReadWebSocketSampler guiclass="eu.luminis.jmeter.wssampler.SingleReadWebSocketSamplerGui" testclass="eu.luminis.jmeter.wssampler.SingleReadWebSocketSampler" testname="WebSocket Read - Listen for Health Updates" enabled="true">
           <boolProp name="createNewConnection">false</boolProp>
           <stringProp name="readTimeout">${LISTEN_DURATION_MS}</stringProp>
           <boolProp name="optional">true</boolProp>
+          <boolProp name="TLS">false</boolProp>
+          <stringProp name="server"></stringProp>
+          <stringProp name="port">80</stringProp>
+          <stringProp name="path"></stringProp>
+          <stringProp name="connectTimeout">20000</stringProp>
+          <stringProp name="dataType">Text</stringProp>
         </eu.luminis.jmeter.wssampler.SingleReadWebSocketSampler>
         <hashTree/>
-
-        <!-- ============================================================== -->
-        <!-- Step 3: Close WebSocket Connection                             -->
-        <!-- ============================================================== -->
         <eu.luminis.jmeter.wssampler.CloseWebSocketSampler guiclass="eu.luminis.jmeter.wssampler.CloseWebSocketSamplerGui" testclass="eu.luminis.jmeter.wssampler.CloseWebSocketSampler" testname="WebSocket Close Connection" enabled="true">
           <stringProp name="statusCode">1000</stringProp>
           <stringProp name="readTimeout">5000</stringProp>
           <boolProp name="createNewConnection">false</boolProp>
         </eu.luminis.jmeter.wssampler.CloseWebSocketSampler>
         <hashTree/>
-
       </hashTree>
-
-      <!-- ================================================================ -->
-      <!-- Listeners                                                        -->
-      <!-- ================================================================ -->
-
-      <!-- Summary Report -->
       <ResultCollector guiclass="SummaryReport" testclass="ResultCollector" testname="Summary Report" enabled="true">
         <boolProp name="ResultCollector.error_logging">false</boolProp>
         <objProp>
@@ -143,8 +121,6 @@
         <stringProp name="filename"></stringProp>
       </ResultCollector>
       <hashTree/>
-
-      <!-- Aggregate Report -->
       <ResultCollector guiclass="StatVisualizer" testclass="ResultCollector" testname="Aggregate Report" enabled="true">
         <boolProp name="ResultCollector.error_logging">false</boolProp>
         <objProp>
@@ -182,7 +158,6 @@
         <stringProp name="filename"></stringProp>
       </ResultCollector>
       <hashTree/>
-
     </hashTree>
   </hashTree>
 </jmeterTestPlan>
