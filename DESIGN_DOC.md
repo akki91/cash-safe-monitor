@@ -742,10 +742,10 @@ Every telemetry log entry contains `"telemetry": "<category>"` as a top-level fi
 
 ```bash
 # Stream all telemetry logs
-docker compose logs -f backend | jq 'select(.telemetry)'
+docker compose logs --tail 50 backend | cut -d'|' -f2- | grep '^\s*{' | jq 'select(.telemetry)'
 
 # Filter to a specific category
-docker compose logs -f backend | jq 'select(.telemetry == "poll_cycle")'
+docker compose logs --tail 100 backend | cut -d'|' -f2- | grep '^\s*{' | jq 'select(.telemetry == "poll_cycle")'
 ```
 
 ### Categories
@@ -763,14 +763,12 @@ docker compose logs -f backend | jq 'select(.telemetry == "poll_cycle")'
 ### Example Queries
 
 ```bash
-# Average poll cycle duration over last 100 cycles
-docker compose logs backend | jq -s '[.[] | select(.telemetry == "poll_cycle") | .cycleDurationMs] | (add / length)'
+# Stream all telemetry logs
+docker compose logs --tail 50 backend | cut -d'|' -f2- | grep '^\s*{' | jq 'select(.telemetry)'
 
-# Count HTTP requests by status code
-docker compose logs backend | jq 'select(.telemetry == "http_request") | .statusCode' | sort | uniq -c
+# Filter to a specific category
+docker compose logs --tail 100 backend | cut -d'|' -f2- | grep '^\s*{' | jq 'select(.telemetry == "poll_cycle")'
 
-# Watch system memory in real-time
-docker compose logs -f backend | jq 'select(.telemetry == "system_stats") | "\(.uptimeSeconds)s — RSS: \(.memory.rssMb)MB, Heap: \(.memory.heapUsedMb)MB"'
 ```
 
 ### Prometheus Metrics & Grafana Dashboards

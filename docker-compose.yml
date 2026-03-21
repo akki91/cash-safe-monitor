@@ -36,6 +36,7 @@ services:
     env_file:
       - .env
     environment:
+      NODE_ENV: production
       DATABASE_URL: postgres://postgres:postgres@postgres:5432/cash_monitor
       REDIS_URL: redis://redis:6379
       API_HOST: 0.0.0.0
