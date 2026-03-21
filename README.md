@@ -69,6 +69,7 @@ cd dashboard && npm run dev
 
 ```bash
 npm test          # Unit tests (39 tests)
+npm run test:integration # Integration tests
 npm run test:watch # Watch mode
 ```
 
