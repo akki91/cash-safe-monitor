@@ -2,7 +2,7 @@
 
 ## 1. Problem Statement
 
-ether.fi needs a monitoring system to track the health of **all user safes** in real-time. Each safe holds collateral assets (liquidUSD, USDC, liquidETH, etc.) against which users borrow USDC. If a user's borrow exceeds the liquidation threshold, their assets can be liquidated.
+ether.fi needs a monitoring system to track the health of **all user safes** in near-time (every x internal - configurable). Each safe holds collateral assets (liquidUSD, USDC, liquidETH, etc.) against which users borrow USDC. If a user's borrow exceeds the liquidation threshold, their assets can be liquidated.
 
 **Core monitoring needs:**
 - Discover all user safes (no on-chain registry exists — must index events)
@@ -706,41 +706,6 @@ cash-safe-monitor/
 
 ---
 
-## 11. Implementation Phases (48h Timeline)
-
-### Phase 1: Core Infrastructure (Hours 0-8)
-- [x] Project setup (TypeScript, Docker Compose, DB schema)
-- [x] Contract ABIs + viem typed bindings
-- [x] Safe discovery service (index existing safes)
-- [x] Basic health severity classification with unit tests
-
-### Phase 2: Polling & Storage (Hours 8-18)
-- [x] Health polling service with BullMQ
-- [x] Multicall batching for efficient RPC usage
-- [x] Snapshot persistence to PostgreSQL
-- [x] Token symbol resolution via ERC20 multicall
-
-### Phase 3: API & Alerts (Hours 18-28)
-- [x] Fastify REST API (all endpoints)
-- [x] Alert engine with threshold detection
-- [x] Notification delivery (Slack webhook)
-- [x] API integration tests
-
-### Phase 4: Dashboard (Hours 28-38)
-- [x] React SPA with safe list, detail, overview pages
-- [x] Health factor charts (Recharts)
-- [x] WebSocket real-time updates
-- [x] Color-coded health indicators
-
-### Phase 5: Testing & Polish (Hours 38-48)
-- [x] JMeter performance test plans
-- [x] Edge case testing
-- [x] README + quick start guide
-- [x] Docker Compose final validation
-- [x] Code cleanup and documentation
-
----
-
 ## 12. Key Design Decisions & Trade-offs
 
 | Decision | Trade-off | Reasoning |
@@ -808,45 +773,9 @@ docker compose logs backend | jq 'select(.telemetry == "http_request") | .status
 docker compose logs -f backend | jq 'select(.telemetry == "system_stats") | "\(.uptimeSeconds)s — RSS: \(.memory.rssMb)MB, Heap: \(.memory.heapUsedMb)MB"'
 ```
 
----
+### Prometheus Metrics & Grafana Dashboards
 
-## 15. Future Improvements
-
-This section documents features that are designed or partially built but not yet fully wired up, as well as new improvements that would strengthen the system for production use.
-
-### 15.1Adaptive Polling Frequency
-
-**Status:** Utility function exists (`getPollingInterval()` in `src/utils/health-calc.ts`), but is not used for scheduling.
-
-**Current behavior:** All safes are polled together on a fixed 30-second interval (`POLL_INTERVAL_MS`).
-
-**Proposed design:** Schedule each safe (or tier of safes) independently based on health factor urgency:
-
-| Health Factor Range | Poll Interval | Rationale |
-|---------------------|---------------|-----------|
-| HF > 2.0            | Every 5 min   | Low risk; conserve RPC calls |
-| 1.5 < HF ≤ 2.0     | Every 2 min   | Moderate risk |
-| 1.2 < HF ≤ 1.5     | Every 30 sec  | High risk; approaching danger |
-| HF ≤ 1.2            | Every 10 sec  | Critical; near liquidation |
-| No debt (HF = ∞)    | Every 15 min  | No risk; minimal polling |
-
-**Implementation path:** Group safes into urgency tiers after each poll. Maintain per-tier BullMQ repeatable jobs with different intervals, or use a priority queue where critical safes are re-enqueued sooner. This would reduce RPC load for large safe populations while keeping critical safes tightly monitored.
-
-### 15.2Additional Notification Channels
-
-**Status:** Only Slack incoming webhooks are implemented (`src/services/notifier.ts`).
-
-**Described but not built:**
-- **PagerDuty** — For on-call escalation of CRITICAL/LIQUIDATABLE alerts. Would use the PagerDuty Events API v2 to create incidents with severity mapping.
-- **Telegram** — Bot-based notifications via the Telegram Bot API. Useful for mobile-first alerting.
-- **Generic Webhooks** — Configurable HTTP POST to arbitrary endpoints, enabling integration with OpsGenie, Discord, or custom internal tooling.
-- **Email** — SMTP or SendGrid-based email alerts for non-urgent summary digests (e.g., daily health report).
-
-**Implementation path:** The notifier already uses `Promise.allSettled()` to support multiple delivery targets. Adding channels means adding parallel delivery functions gated by environment variables (e.g., `PAGERDUTY_ROUTING_KEY`, `TELEGRAM_BOT_TOKEN`).
-
-### 15.3Prometheus Metrics & Grafana Dashboards
-
-**Status:** Implemented. Prometheus metrics are exported at `GET /metrics` via `prom-client`. A pre-provisioned Grafana dashboard is included.
+Prometheus metrics are exported at `GET /metrics` via `prom-client`. A pre-provisioned Grafana dashboard is included.
 
 **Exported metrics:**
 
@@ -868,21 +797,59 @@ Default Node.js process metrics (memory, CPU, event-loop lag) are also collected
 
 **Infrastructure:** Prometheus (`localhost:9090`) and Grafana (`localhost:3001`, admin/admin) are included in `docker-compose.yml`. The Grafana dashboard is auto-provisioned from `monitoring/grafana/dashboards/cash-monitor.json`.
 
-### 15.4Data Retention & Snapshot Partitioning
+---
+
+## 15. Future Improvements
+
+This section documents features that are designed or partially built but not yet fully wired up, as well as new improvements that would strengthen the system for production use.
+
+### 15.1 Adaptive Polling Frequency
+
+**Status:** Utility function exists (`getPollingInterval()` in `src/utils/health-calc.ts`), but is not used for scheduling.
+
+**Current behavior:** All safes are polled together on a fixed 30-second interval (`POLL_INTERVAL_MS`).
+
+**Proposed design:** Schedule each safe (or tier of safes) independently based on health factor urgency:
+
+| Health Factor Range | Poll Interval | Rationale |
+|---------------------|---------------|-----------|
+| HF > 2.0            | Every 5 min   | Low risk; conserve RPC calls |
+| 1.5 < HF ≤ 2.0     | Every 2 min   | Moderate risk |
+| 1.2 < HF ≤ 1.5     | Every 30 sec  | High risk; approaching danger |
+| HF ≤ 1.2            | Every 10 sec  | Critical; near liquidation |
+| No debt (HF = ∞)    | Every 15 min  | No risk; minimal polling |
+
+**Implementation path:** Group safes into urgency tiers after each poll. Maintain per-tier BullMQ repeatable jobs with different intervals, or use a priority queue where critical safes are re-enqueued sooner. This would reduce RPC load for large safe populations while keeping critical safes tightly monitored.
+
+### 15.2 Additional Notification Channels
+
+**Status:** Only Slack incoming webhooks are implemented (`src/services/notifier.ts`).
+
+**Described but not built:**
+- **PagerDuty** — For on-call escalation of CRITICAL/LIQUIDATABLE alerts. Would use the PagerDuty Events API v2 to create incidents with severity mapping.
+- **Telegram** — Bot-based notifications via the Telegram Bot API. Useful for mobile-first alerting.
+- **Generic Webhooks** — Configurable HTTP POST to arbitrary endpoints, enabling integration with OpsGenie, Discord, or custom internal tooling.
+- **Email** — SMTP or SendGrid-based email alerts for non-urgent summary digests (e.g., daily health report).
+
+**Implementation path:** The notifier already uses `Promise.allSettled()` to support multiple delivery targets. Adding channels means adding parallel delivery functions gated by environment variables (e.g., `PAGERDUTY_ROUTING_KEY`, `TELEGRAM_BOT_TOKEN`).
+
+### 15.3 Data Retention & Snapshot Partitioning
 
 **Status:** Not implemented. Snapshots accumulate indefinitely.
 
 **Problem:** At 10K safes polled every 30 seconds, the `safe_snapshots` table grows by ~29M rows/day. Without retention, query performance degrades and storage costs escalate.
 
 **Proposed strategy:**
-1. **Time-based partitioning** — Partition `safe_snapshots` by month using PostgreSQL native table partitioning (`PARTITION BY RANGE (created_at)`). Drizzle doesn't natively support partitioning, so this would be a raw SQL migration.
-2. **Retention policy** — A scheduled cleanup job (daily cron via BullMQ) that:
+1. **Change Data Capture (CDC) pattern** — Before inserting a new snapshot, compare the incoming values (health factor, collateral, debt, liquidation status) against the safe's current state in `user_safes`. Only create a snapshot row if something has actually changed. This avoids writing identical rows every poll cycle for safes whose on-chain state hasn't moved, dramatically reducing write volume. 
+
+2. **Time-based partitioning** — Partition `safe_snapshots` by month using PostgreSQL native table partitioning (`PARTITION BY RANGE (created_at)`). Drizzle doesn't natively support partitioning, so this would be a raw SQL migration.
+3. **Retention policy** — A scheduled cleanup job (daily cron via BullMQ) that:
    - Keeps full-resolution snapshots for the last 7 days
    - Aggregates to hourly averages for 7–90 days
    - Drops data older than 90 days (or archives to cold storage)
-3. **Materialized views** — Pre-compute daily/hourly rollups for the history chart endpoint to avoid scanning millions of rows.
+4. **Materialized views** — Pre-compute daily/hourly rollups for the history chart endpoint to avoid scanning millions of rows.
 
-### 15.5Chain Reorg Handling
+### 15.4 Chain Reorg Handling
 
 **Status:** Not implemented. Safe discovery is a one-shot operation with no reorg awareness.
 
@@ -894,7 +861,7 @@ Default Node.js process metrics (memory, CPU, event-loop lag) are also collected
 - Use idempotent upserts (`ON CONFLICT DO NOTHING`) so re-indexing is safe
 - For the WebSocket live watcher, viem's `watchEvent` already handles reorgs internally by re-emitting events, but explicit confirmation depth (wait 12 blocks before treating a safe as confirmed) would add safety
 
-### 15.6WebSocket Subscriptions & Filtering
+### 15.5 WebSocket Subscriptions & Filtering
 
 **Status:** Current WebSocket is a one-way broadcast — all connected clients receive updates for all safes.
 
@@ -903,7 +870,7 @@ Default Node.js process metrics (memory, CPU, event-loop lag) are also collected
 - **Threshold filtering** — Clients can request updates only when HF drops below a threshold (e.g., `{ "threshold": 1.5 }`)
 - **Heartbeat/ping-pong** — Add periodic keepalive pings to detect stale connections faster and prevent proxy timeouts
 
-### 15.7Integration & Contract Interaction Tests
+### 15.6 Integration & Contract Interaction Tests
 
 **Status:** Integration tests exist for API endpoints and alert lifecycle. Contract interaction tests (forked mainnet) are not implemented.
 
@@ -913,7 +880,7 @@ Default Node.js process metrics (memory, CPU, event-loop lag) are also collected
 - **WebSocket integration** — Connect a WS client, trigger a health update, verify the message format
 - **End-to-end polling pipeline** — Mock RPC → poll → verify DB snapshot + alert + WS broadcast
 
-### 15.8RPC Resilience & Multi-Provider Failover
+### 15.7 RPC Resilience & Multi-Provider Failover
 
 **Status:** Single RPC endpoint configured via `RPC_URL`. No failover.
 
@@ -923,7 +890,7 @@ Default Node.js process metrics (memory, CPU, event-loop lag) are also collected
 - **Circuit breaker** — If an RPC provider returns errors for N consecutive requests, temporarily remove it from the rotation and alert operators
 - **Rate limit awareness** — Track 429 responses and throttle requests per provider
 
-### 15.9Dashboard Enhancements
+### 15.8 Dashboard Enhancements
 
 **Status:** Core pages (Overview, Safe List, Safe Detail, Alerts) are implemented.
 
@@ -935,7 +902,7 @@ Default Node.js process metrics (memory, CPU, event-loop lag) are also collected
 - **Dark/light mode toggle** — Currently dark-only
 - **Mobile responsiveness** — Improve layout for small screens; the data-dense tables need horizontal scroll or card layouts on mobile
 
-### 15.10Historical Health Factor Simulation
+### 15.9 Historical Health Factor Simulation
 
 **Proposed feature:** A "what-if" simulator that lets operators adjust collateral prices or debt amounts and see how health factors would change across all safes. This would help assess protocol-wide risk in market crash scenarios (e.g., "what happens if ETH drops 30%?").
 

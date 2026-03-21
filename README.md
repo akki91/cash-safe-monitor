@@ -7,9 +7,10 @@ For architecture, design decisions, test plan, and performance testing details, 
 ## Prerequisites
 
 - **Docker** and **Docker Compose** (v2.20+)
-- **Node.js 20+** (for local development only)
+- **Node.js 20+** (for non container development environment only)
 - A **Scroll chain RPC endpoint** — the project monitors ether.fi Cash safes on [Scroll](https://scroll.io). Use a provider like Ankr, Alchemy, or the public `https://rpc.scroll.io`
 
+> **Note:** Safe addresses are loaded from a CSV file at startup. The initial CSV was generated from [Dune Analytics](https://dune.com/queries/4532934/7566624) using `scroll.logs` to find borrow events from the ether.fi Cash protocol — giving us safes that have actively borrowed and have meaningful health factors to monitor.
 
 ## Run with Docker
 
