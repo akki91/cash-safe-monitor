@@ -135,7 +135,7 @@ This single-call approach eliminates the need for separate contract calls for pr
 | **Frontend** | **React + Vite + Recharts** | Fast to build; Recharts for health factor charts; TailwindCSS for rapid UI |
 | **Job Scheduler** | **BullMQ** (Redis-backed) | Reliable cron-like polling; retries; concurrency control; rate limiting for RPC calls |
 | **Containerization** | **Docker Compose** | Single `docker compose up` for reviewer; bundles Postgres + Redis + App |
-| **Testing** | **Vitest** (unit) + **Supertest** (API) + **JMeter** (perf) | Fast test runner; native ESM; same ecosystem |
+| **Testing** | **Vitest** (unit + integration) + **JMeter** (perf) | Fast test runner; native ESM; Fastify's built-in `app.inject()` for API tests |
 
 ### Why NOT other choices?
 
@@ -423,7 +423,7 @@ CREATE INDEX idx_alerts_safe ON alerts(safe_address, created_at DESC);
 | | USD value normalization (6 decimals) | P0 |
 | | JSONB collateral details serialization | P1 |
 
-### 8.2 Integration Tests (Supertest + Test DB)
+### 8.2 Integration Tests (Fastify inject + Test DB)
 
 | Test Case | Description |
 |-----------|-------------|
