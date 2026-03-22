@@ -79,3 +79,17 @@ npm run test:watch # Watch mode
 jmeter -n -t jmeter/api-load-test.jmx -l results.jtl
 jmeter -n -t jmeter/websocket-stress.jmx -l ws-results.jtl
 ```
+## Images from dashboard
+
+<img width="1682" height="649" alt="Screenshot 2026-03-22 at 9 39 50 AM" src="https://github.com/user-attachments/assets/378cbc49-b3fd-4e03-b794-92b0a9e991a9" />
+
+<img width="1449" height="576" alt="Screenshot 2026-03-22 at 9 40 05 AM" src="https://github.com/user-attachments/assets/23ae35be-e078-4dd1-bbc5-dd4642eb7eb4" />
+
+<img width="1413" height="840" alt="Screenshot 2026-03-22 at 9 40 16 AM" src="https://github.com/user-attachments/assets/0b302889-eda6-4a1e-a0b4-604846a6f448" />
+
+<img width="1443" height="619" alt="Screenshot 2026-03-22 at 9 40 21 AM" src="https://github.com/user-attachments/assets/fd556fe7-bc3b-4749-8979-e1ca48435c3d" />
+
+
+
+
+
