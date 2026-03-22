@@ -9,7 +9,7 @@
 import type { FastifyInstance } from "fastify";
 import { db } from "../../db/index.js";
 import { userSafes, safeSnapshots } from "../../db/schema.js";
-import { eq, asc, desc, gte, lte, and, sql, isNotNull } from "drizzle-orm";
+import { eq, asc, desc, gte, lte, and, sql, isNotNull, like } from "drizzle-orm";
 
 export async function safesRoutes(app: FastifyInstance): Promise<void> {
   // -----------------------------------------------------------------------
@@ -24,6 +24,7 @@ export async function safesRoutes(app: FastifyInstance): Promise<void> {
       minHealth?: string;
       maxHealth?: string;
       hasDebt?: string;
+      search?: string;
     };
   }>("/api/safes", async (req, reply) => {
     const page = Math.max(parseInt(req.query.page || "1"), 1);
@@ -53,6 +54,11 @@ export async function safesRoutes(app: FastifyInstance): Promise<void> {
     }
     if (req.query.hasDebt === "false") {
       conditions.push(eq(userSafes.hasDebt, false));
+    }
+    if (req.query.search) {
+      conditions.push(
+        like(userSafes.address, `%${req.query.search.toLowerCase()}%`),
+      );
     }
 
     const where = conditions.length > 0 ? and(...conditions) : undefined;

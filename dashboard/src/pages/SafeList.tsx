@@ -23,10 +23,20 @@ export default function SafeList() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [filter, setFilter] = useState<FilterPreset>('all');
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { lastUpdateTime } = useWebSocket();
   const isInitialLoad = useRef(true);
+
+  // Debounce search input (300ms)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search.trim());
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   const activePreset = FILTER_PRESETS.find((p) => p.key === filter)!;
 
@@ -41,6 +51,7 @@ export default function SafeList() {
         order: sortOrder,
         minHealth: activePreset.minHealth,
         maxHealth: activePreset.maxHealth,
+        search: debouncedSearch || undefined,
       });
       setSafes(data.safes);
       setTotal(data.total);
@@ -49,7 +60,7 @@ export default function SafeList() {
     } finally {
       setLoading(false);
     }
-  }, [page, sortField, sortOrder, activePreset.minHealth, activePreset.maxHealth]);
+  }, [page, sortField, sortOrder, activePreset.minHealth, activePreset.maxHealth, debouncedSearch]);
 
   useEffect(() => {
     loadSafes(isInitialLoad.current);
@@ -74,11 +85,6 @@ export default function SafeList() {
   const handleRowClick = (address: string) => {
     navigate(`/safes/${address}`);
   };
-
-  // Client-side search filtering (address)
-  const filteredSafes = search.trim()
-    ? safes.filter((s) => s.address.toLowerCase().includes(search.toLowerCase()))
-    : safes;
 
   const totalPages = Math.ceil(total / PAGE_LIMIT);
 
@@ -147,7 +153,7 @@ export default function SafeList() {
           </div>
         ) : (
           <SafeTable
-            safes={filteredSafes}
+            safes={safes}
             onRowClick={handleRowClick}
             sortField={sortField}
             sortOrder={sortOrder}

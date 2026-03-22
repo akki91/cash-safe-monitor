@@ -208,6 +208,7 @@ export async function fetchSafes(params: {
   order?: 'asc' | 'desc';
   minHealth?: number;
   maxHealth?: number;
+  search?: string;
 }): Promise<SafeListResponse> {
   const searchParams = new URLSearchParams();
   if (params.page !== undefined) searchParams.set('page', String(params.page));
@@ -216,6 +217,7 @@ export async function fetchSafes(params: {
   if (params.order) searchParams.set('order', params.order);
   if (params.minHealth !== undefined) searchParams.set('minHealth', String(params.minHealth));
   if (params.maxHealth !== undefined) searchParams.set('maxHealth', String(params.maxHealth));
+  if (params.search) searchParams.set('search', params.search);
 
   const res = await apiFetch<{ data: Record<string, unknown>[]; pagination: { total: number; page: number; limit: number } }>(
     `/safes?${searchParams.toString()}`,
