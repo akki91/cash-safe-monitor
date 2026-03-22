@@ -229,7 +229,7 @@ async function pollSafeHealth(safeAddress: string) {
 }
 ```
 
-**Current Implementation:** All safes are polled together in a single batch on a fixed interval controlled by the `POLL_INTERVAL_MS` environment variable (default: 30 seconds). The `HealthPollerService.schedulePollCycle()` method runs one full round — fetching data for every known safe via multicall, persisting snapshots, evaluating alerts, and broadcasting WebSocket updates — then waits `POLL_INTERVAL_MS` before starting the next round.
+**Current Implementation:** All safes are polled together in a single batch on a fixed interval controlled by the `POLL_INTERVAL_MS` environment variable (default: 15 mins). The `HealthPollerService.schedulePollCycle()` method runs one full round — fetching data for every known safe via multicall, persisting snapshots, evaluating alerts, and broadcasting WebSocket updates — then waits `POLL_INTERVAL_MS` before starting the next round.
 
 **Single-Call Architecture:** Each safe requires only 1 RPC call (`getSafeCashData`) which returns all collateral balances, debt positions, token prices, and aggregate USD values. Token symbols are resolved separately via ERC20 `symbol()` calls with an in-memory cache, so they only need to be fetched once per token address.
 

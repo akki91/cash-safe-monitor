@@ -21,7 +21,7 @@ export const config = {
     csvPath: process.env.SAFE_ADDRESSES_CSV || "./data/safe_addresses.csv",
   },
   polling: {
-    intervalMs: parseInt(process.env.POLL_INTERVAL_MS || "30000"),
+    intervalMs: parseInt(process.env.POLL_INTERVAL_MS || "900000"),
     multicallBatchSize: parseInt(process.env.MULTICALL_BATCH_SIZE || "100"),
     rpcRetries: parseInt(process.env.RPC_RETRIES || "3"),
     rpcRetryDelayMs: parseInt(process.env.RPC_RETRY_DELAY_MS || "1000"),
